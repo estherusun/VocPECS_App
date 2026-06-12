@@ -1,0 +1,43 @@
+name: polapecs
+description: "A PECS and Kanban app for PWD children."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.11.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  provider: ^6.1.1
+  image_picker: ^1.0.4
+  google_mlkit_image_labeling: ^0.12.1
+  google_mlkit_commons: ^0.8.1
+  confetti: ^0.7.0
+  shared_preferences: ^2.2.2
+  youtube_player_flutter: ^9.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1 
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/images/reward/
+    - assets/images/basic_example/Module 1 Germination/
+    - assets/images/basic_example/Module 2 Transfer Sapling/
+    - assets/images/basic_example/Module 3 Nursery/
+    - assets/images/basic_example/Module 4 Harvest/
+    - assets/video/
+  
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  adaptive_icon_background: "#F1E6D2" # Your cream background color
+  adaptive_icon_foreground: "assets/images/app_icon.png"
