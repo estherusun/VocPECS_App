@@ -29,7 +29,6 @@ class PecsProvider with ChangeNotifier {
   String? get currentUser => _currentUser;
   List<PecsTask> get taskAlbums => _taskAlbums;
   List<PecsItem> get library => _library;
-
   List<PecsItem> get items => _userBoards[_currentUser] ?? [];
   int get completedModulesCount => _userFinishedMedals[_currentUser]?.length ?? 0;
   int get totalActivePecs => items.length;
@@ -42,7 +41,7 @@ class PecsProvider with ChangeNotifier {
     return finishedPecsCount / totalActivePecs;
   }
 
-  // --- 3. SAVE & LOAD LOGIC ---
+  // --- 3. SAVE & LOAD (PERSISTENCE) ---
   Future<void> _initPersistence() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -97,7 +96,6 @@ class PecsProvider with ChangeNotifier {
   }
 
   // --- 4. LOGIC FUNCTIONS ---
-
   void addProfile(String name, File? img) {
     Color nextColor = _availableColors[_profiles.length % _availableColors.length];
     _profiles.add(UserProfile(id: DateTime.now().toString(), name: name, image: img, color: nextColor));
@@ -115,7 +113,6 @@ class PecsProvider with ChangeNotifier {
     }
   }
 
-  // NEW: Delete profile logic moved inside class
   void deleteProfile(String id) {
     int idx = _profiles.indexWhere((p) => p.id == id);
     if (idx != -1) {
@@ -128,6 +125,27 @@ class PecsProvider with ChangeNotifier {
     }
   }
 
+  void selectUser(String name) {
+    _currentUser = name;
+    notifyListeners();
+  }
+
+  void startTask(PecsTask task) {
+    if (_currentUser == null) {
+      return;
+    }
+    _activeModuleId = task.id;
+    _userBoards[_currentUser!] = task.items.map((i) => PecsItem(
+      id: "${i.id}_act", 
+      label: i.label, 
+      imagePath: i.imagePath, 
+      isAsset: i.isAsset, 
+      instruction: i.instruction, 
+      status: 'material'
+    )).toList();
+    notifyListeners();
+  }
+
   void updatePecsStatus(String id, String newStatus) {
     if (_currentUser == null) {
       return;
@@ -136,16 +154,7 @@ class PecsProvider with ChangeNotifier {
     int idx = currentBoard.indexWhere((item) => item.id == id);
     if (idx != -1) {
       currentBoard[idx].status = newStatus;
-      if (currentBoard.isNotEmpty && currentBoard.every((i) => i.status == 'done' || i.status == 'reward')) {
-        for (var i in currentBoard) {
-          i.status = 'reward';
-        }
-        if (_activeModuleId != null) {
-          if (!(_userFinishedMedals[_currentUser!]?.contains(_activeModuleId) ?? false)) {
-            _userFinishedMedals.putIfAbsent(_currentUser!, () => []).add(_activeModuleId!);
-          }
-        }
-      }
+      _checkAndFinishModule(currentBoard);
       _saveAll();
       notifyListeners();
     }
@@ -166,19 +175,23 @@ class PecsProvider with ChangeNotifier {
       } else if (s == 'doing') {
         currentBoard[idx].status = 'done';
       }
-
-      if (currentBoard.every((i) => i.status == 'done' || i.status == 'reward')) {
-        for (var i in currentBoard) {
-          i.status = 'reward';
-        }
-        if (_activeModuleId != null) {
-          if (!(_userFinishedMedals[_currentUser!]?.contains(_activeModuleId) ?? false)) {
-            _userFinishedMedals.putIfAbsent(_currentUser!, () => []).add(_activeModuleId!);
-          }
-        }
-      }
+      
+      _checkAndFinishModule(currentBoard);
       _saveAll();
       notifyListeners();
+    }
+  }
+
+  void _checkAndFinishModule(List<PecsItem> currentBoard) {
+    if (currentBoard.isNotEmpty && currentBoard.every((i) => i.status == 'done' || i.status == 'reward')) {
+      for (var i in currentBoard) {
+        i.status = 'reward';
+      }
+      if (_activeModuleId != null) {
+        if (!(_userFinishedMedals[_currentUser!]?.contains(_activeModuleId!) ?? false)) {
+          _userFinishedMedals.putIfAbsent(_currentUser!, () => []).add(_activeModuleId!);
+        }
+      }
     }
   }
 
@@ -194,31 +207,9 @@ class PecsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // NEW: Delete module logic moved inside class
   void deleteModule(String id) {
     _taskAlbums.removeWhere((album) => album.id == id);
     _saveAll();
-    notifyListeners();
-  }
-
-  void selectUser(String name) {
-    _currentUser = name;
-    notifyListeners();
-  }
-
-  void startTask(PecsTask task) {
-    if (_currentUser == null) {
-      return;
-    }
-    _activeModuleId = task.id;
-    _userBoards[_currentUser!] = task.items.map((i) => PecsItem(
-      id: "${i.id}_act",
-      label: i.label,
-      imagePath: i.imagePath,
-      isAsset: i.isAsset,
-      instruction: i.instruction,
-      status: 'material',
-    )).toList();
     notifyListeners();
   }
 
